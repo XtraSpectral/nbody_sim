@@ -1,0 +1,68 @@
+.root {
+	-fx-background-color: #000000; /* black */
+}
+
+.button {
+    -fx-background-color: rgba(23, 32, 42, 1); /* dark charcoal */
+    -fx-effect: dropshadow( three-pass-box , rgba(23, 32, 42, 1) , 10, 0.0 , 0 , 1 ); /* cobalt */
+    -fx-font-family: "Helvetica";
+    -fx-text-fill: #d5dbdb; /* silver */
+    -fx-font-size: 12px;
+    -fx-font-weight: normal;
+}
+
+.button:hover {
+    -fx-font-weight: bold;
+    -fx-text-fill:  #f9e79f ; /* off-white */
+}
+
+.button:pressed {
+    -fx-background-color: rgba(23, 32, 42, 1); /* cobalt */
+    -fx-text-fill:  #f9e79f ; /* off-white */
+}
+
+
+.label {
+	-fx-text-fill: #424949; /* mid grey */
+	-fx-font-family: "Consolas";
+    -fx-font-size: 12px;
+}
+
+.controls {
+	-fx-background-color: rgba(7, 10, 14, 1); /* dark cobalt */
+	
+}
+
+.console {
+	-fx-background-color: rgba(7, 10, 14, 1); /* dark cobalt */
+}
+
+.console .text {
+	-fx-font: 14px Courier;
+	-fx-fill: #d5dbdb; /* silver */
+	-fx-font-weight: bold;
+}
+
+.controller {
+	-fx-background-color: rgba(7, 10, 14, 1); /* dark cobalt */
+}
+
+.controller .text {
+	-fx-font: 14px Courier;
+	-fx-fill: #d5dbdb; /* silver */
+	-fx-font-weight: bold;
+}
+
+.textbox {
+	-fx-background-color: #424949; /* mid grey */
+	-fx-text-fill: #d5dbdb; /* silver */
+}
+
+.statsbox {
+	-fx-background-color: #424949; /* mid grey */
+	-fx-text-fill: #d5dbdb; /* silver */
+}
+
+.homescreen {
+	-fx-background-color: #000000; /* black */
+}
