@@ -1,11 +1,10 @@
-package physics.simulation;
+package main.simulation;
 
-import javafx.scene.paint.Color;
 import main.objects.Poly;
 import main.objects.Node;
 import main.objects.PhysicsNode;
 import main.objects.Transit;
-import main.objects.Camera;
+import main.objects.Vector;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,12 +15,12 @@ import javafx.geometry.Point3D;
 import javafx.scene.canvas.GraphicsContext;
 import java.util.concurrent.ThreadLocalRandom;
 
-/**The Galaxy class is responsible for maintaining + organizing all
- * objects contained within the simulation. It can be used to store
- * and collect metadata. No manipulations to objects should be done
- * here except for when the status of the object's field is related
- * to a field in this class 									*/
+
 public class Galaxy extends ArrayList<PhysicsNode> {
+
+	/**The Galaxy class is responsible for maintaining + organizing all
+	 * objects contained within the simulation.
+	 */
 	
 	private static final long serialVersionUID = 1L;
 	private int seed;
@@ -31,7 +30,7 @@ public class Galaxy extends ArrayList<PhysicsNode> {
 	// hashmap of nodes to a list of transits that originate from that node
 	private Map<Node, List<Transit>> transits = new HashMap<Node, List<Transit>>();
 	private List<PhysicsNode> energySources = new ArrayList<PhysicsNode>();
-	private Camera selectionTransit;	  
+	private Vector selectionTransit;	  
 	private boolean refreshTransits = true;
     
 	
@@ -84,13 +83,11 @@ public class Galaxy extends ArrayList<PhysicsNode> {
 		if (index == activeKey || index == -1) {
 			if (getActive() != null) {
 				getActive().deselect();
-				getActive().setRenderable(true);
 			}
 			activeKey = -1; 
 		} else if (index < this.size() && index >= 0) {
 			if (hasActive()) {
 				getActive().deselect();
-				getActive().setRenderable(true);
 			}
 
 			// set new activeKey and select newly active object
@@ -99,16 +96,27 @@ public class Galaxy extends ArrayList<PhysicsNode> {
 		} else {System.out.println("Galaxy.setActive bad argument received");}
 	}
 	
-	public void drawActive(Camera camera, GraphicsContext gc) {
+	public void drawActive(Vector camera, GraphicsContext gc) {
+		
+		// do not do anything if no active object or not renderable
 		if (!hasActive()) {return;}
 		if (!getActive().isRenderable()) {return;}
-		// draw vector line to object from central star
-		Camera v = getActive().showVectorTo(get(0));
-		v.importVector(selectionTransit == null ? v : selectionTransit);
+		
+		// create a new transit animation line from selection to central object
+		// check how it compares with the previous line, to determine
+		// animation settings (doppler shift indicator, dashed line animation setting)
+		Vector v = new Vector(getActive().getXYZ(), get(0).getXYZ());
+		if (selectionTransit != null) {
+			v.setAnimationModifier(selectionTransit.getAnimationModifier());
+			v.setOldDistance(selectionTransit.getDistance());
+		}
+		
+		// set transit animation line for current frame, then draw it
 		this.selectionTransit = v;
 		v.drawVectorAnimation(camera, gc);
-		// draw selection labels
-//		getActive().drawSelectionVisuals(gc, camera);
+		
+		// draw labels on selected objects
+		getActive().drawSelectionVisuals(gc, camera);
 	}
 	
 	public boolean hasActive() {
@@ -136,6 +144,7 @@ public class Galaxy extends ArrayList<PhysicsNode> {
 	    	stream().forEach(x -> x.applyForcesFrom(this));
 		}
 		
+		// FIXME still do this if isPaused, because space can be contracted, affecting energy
 		for (int i=0; i<size(); i++) {
 			// update object coloring
 			for (PhysicsNode energysource : getEnergySources()) {
@@ -148,26 +157,26 @@ public class Galaxy extends ArrayList<PhysicsNode> {
 		}
 	}
 	
-	public List<Poly> getPolygons(Camera camera) {
+	public List<Poly> getPolygons(Vector camera) {
 		List<Poly> allPolygons = new ArrayList<Poly>();
 		for (int i=0; i<size(); i++) {
 			// TODO temporarily disable rendering objects that contain the camera 
 			//	if (get(i).containsPoint3D(camera.getViewFrom())) {get(i).turnOffThisRenderCycle();}
 			
-			// update and draw if renderable, else reset temporary rendering switch
+			// update and draw if renderable
 			if (get(i).isRenderable()) {
 				for (Poly p : get(i).getPolygons()) {					
-					p.updatePolygon(camera);
+					p.update(camera);
 					allPolygons.add(p);
 				}
-			} else {get(i).turnOnNextRenderCycle();}
+			}
 		}
 		// order all polygons
 		try {
 			allPolygons.sort((o1, o2) -> o1.compareTo(o2));			
 		} catch (IllegalArgumentException e) {
 			// catches if avgdist is NaN
-			allPolygons.stream().forEach(x -> System.out.println(x.getAvgDist()));
+			allPolygons.stream().forEach(x -> System.out.println(x.getDistance()));
 			System.out.println("Galaxy.getPolygons illegalargumentexception caught");
 		}
 		return allPolygons;
@@ -211,6 +220,7 @@ public class Galaxy extends ArrayList<PhysicsNode> {
     	transits.clear();
     	
     	for (PhysicsNode p1 : this) {
+    		  		
     		double dist1 = 5.0;
     		double dist2 = 5.0;
     		double dist3 = 5.0;
@@ -222,7 +232,8 @@ public class Galaxy extends ArrayList<PhysicsNode> {
         	for (PhysicsNode p2 : this) {
         		if (p1.equals(p2)) {continue;}
 
-        		double newDist = p1.unitDistanceTo(p2);
+        		double newDist = p1.getXYZ().distance(p2.getXYZ());       		
+        		
         		if (newDist <= dist1 && dist1 > dist2 && dist1 > dist3) {
         			closest1 = p2;
         			dist1 = newDist;
@@ -255,7 +266,7 @@ public class Galaxy extends ArrayList<PhysicsNode> {
     	}
     }
     
-    public void drawAllTransits(GraphicsContext g, Camera camera, boolean pathContext) {
+    public void drawAllTransits(GraphicsContext g, Vector camera) {
     	// creates new transits only every other refresh, for performance
     	if (refreshTransits) {
     		newTransits();  
@@ -268,9 +279,9 @@ public class Galaxy extends ArrayList<PhysicsNode> {
 			for (Transit t : transits.get(get(i))) {
 	    		if (t.getDistance()<5.0) {
 	    			// sources and destinations must extend class Node
-		    		Point2D source = camera.transformPointTo2D(t.getSource().getXYZ());
-		    		Point2D dest = camera.transformPointTo2D(t.getDestination().getXYZ());
-		    		g.setStroke(pathContext ? ((Node) t.getSource()).getColor() : Color.DARKORANGE);
+		    		Point2D source = camera.toScreenSpace(t.getSource().getXYZ());
+		    		Point2D dest = camera.toScreenSpace(t.getDestination().getXYZ());
+		    		g.setStroke(((Node) t.getSource()).getColor());
 		    		g.strokeLine(source.getX(), source.getY(), dest.getX(), dest.getY());
 	    		}
 	    	}

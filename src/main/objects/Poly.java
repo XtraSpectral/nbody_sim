@@ -1,28 +1,34 @@
 package main.objects;
 
-
 import javafx.scene.paint.Color;
-import java.awt.Polygon;
-
+import javafx.scene.shape.Polygon;
+import java.util.stream.IntStream;
 import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.scene.canvas.GraphicsContext;
 
 public class Poly extends Polygon {
 	
-	private static final long serialVersionUID = 1L;
-	private Color c; // color of the drawable graphic's body
-	private Color f; // color of polygon frame
-	private double[] x, y, z; // default coordinates for each point
-	private double avgDist = 0.0; // render distance from camera
-	private boolean selected = false; // selection by mouse
-	private int shapeNumber;
-	private boolean isTestInstance = false;
-	private boolean drawFrameOnly = false;
+	/**Polygon class for rendering 3D geometric objects in 2D.
+	 * 
+	 * Each Polygon has characteristics for color, 3D position, 2D position,
+	 * and distance from the focus of the application's camera vector.
+	 * Polygons are associated with a node with shape data, unless
+	 * drawn freely.
+	 */
 	
-	// need in double format for javaFX canvas strokePolygon() and fillPolygon()
-	private double[] xp;
-	private double[] yp;
+	private Color c; // color of the drawable graphic's body
+	private double[] x, y, z; // default coordinates for each vertex
+	private double distance = 0.0; // render distance from camera's focus
+	private boolean selected = false; // is the parent object selected?
+	private int shapeNumber; // identifier for parent object
+	
+	// x points and y points for 2D screen placement
+	// even though the Polygon class stores the same values, having independent
+	// sets for 2D point (x, y) is more convenient to render and work with.
+	// However, its easier to check for mouseclicks on Polygons with the Polygon class
+	// Dumb but easy
+	private double[] xp, yp; 
 	
 	@Override
 	public String toString() {
@@ -42,100 +48,51 @@ public class Poly extends Polygon {
 		this.y = y;
 		this.z = z;
 		this.shapeNumber = i;
+	}
 	
-		this.f = Color.BLACK;
- 		// add perspective to 2d face for 3d appearance
+	public double getDistanceFromPoint(Point3D point) {
+		// returns average distance between this polygons vertices and a point
+		double distance = IntStream.range(0, x.length)
+							   	   .mapToDouble(i -> point.distance(new Point3D(x[i], y[i], z[i])))
+							       .average()
+							       .getAsDouble();
+		return distance;
 	}
 
 	
-	public void updatePolygon(Camera viewVector) {
-		this.reset();
+	public void update(Vector camera) {
+		this.getPoints().clear();
 		
 		xp = new double[4];
 		yp = new double[4];
 		
 		for (int i=0; i<4; i++) {
-			Point2D n = viewVector.transformPointTo2D(new Point3D(x[i], y[i], z[i]));
-			addPoint((int) n.getX(), (int) n.getY()); // legacy java swing polygon points
-			xp[i] = n.getX();
-			yp[i] = n.getY();
-			
+			Point2D point2D = camera.toScreenSpace(new Point3D(x[i], y[i], z[i]));
+			// add new point to the Polygon's and Poly's point sets
+			getPoints().addAll(point2D.getX(), point2D.getY());
+			xp[i] = point2D.getX();
+			yp[i] = point2D.getY();
 		}
 
-		
-//		IntStream.range(0, x.length)
-//				 .mapToObj(i -> viewVector.transformPointTo2D(x[i], y[i], z[i]))
-//				 .forEach(i -> addPoint((int) i[0], (int) i[1]));	
-		
-		this.avgDist = viewVector.getAvgDistanceFromOrigin(x, y, z);
-		
-	}
-
-	public void drawPolygon(GraphicsContext g) {
-		drawPolygon(g, c);
+		this.distance = getDistanceFromPoint(camera.getOrigin());
 	}
 	
-	public void drawPolygon(GraphicsContext g, Color c) {
+	public void draw(GraphicsContext g) {
 		
-//		if (!drawFrameOnly) {
-//			// draw shape fill, can set different color when selected here
-//			g.setFill(Color.BLACK);
-//			g.fillPolygon(this.getX(), this.getY(), 4);
-//		}
 		g.setFill(c);
-		
-		
-				
-		
 		g.fillPolygon(xp, yp, 4);
 		g.fill();
         g.stroke();
-		// draw shape outline, chooing different color if selected
-//		g.setColor((selected ? Color.green : Color.black));
-//		if (drawFrameOnly) {g.setColor(Color.darkGray);}
-//		g.drawPolygon(this);
 		
 		// draw selection details
 		if (selected) {
-			
-			// red pixels on corner
+			// green pixels on corner
 			g.setFill(Color.GREEN);
 			int radius = 2;
-			for (int i=0; i<xpoints.length; i++) {
+			for (int i=0; i<xp.length; i++) {
 				g.fillRect(xp[i] - radius, yp[i] - radius, radius, radius);
 			}
 		}
-	}
-	
-	public void drawPolygonWithFrame(GraphicsContext g) {
-		drawPolygon(g, c);
-		g.setStroke(f);
-		g.setLineWidth(1);
-		g.strokePolygon(xp, yp, 4);
-        g.stroke();
-	}
-	
-	public void setFrameColor(Color frameColor) {
-		this.f = frameColor;
-	}
-
-	
-	public void setDrawFrameOnly(boolean drawFrameOnly) {
-		this.drawFrameOnly = drawFrameOnly;
-	}
-	
-	public double[] getCenterPoint() {
-		double newx = 0, newy = 0, newz = 0;
-		for (int i=0; i<x.length; i++) {
-			newx += x[i];
-			newy += y[i];
-			newz += z[i];
-		}
-		newx /= 4;
-		newy /= 4;
-		newz /= 4;
-		return new double[] {newx, newy, newz};
-		
 	}
 	
 	public void toggleSelect(boolean selected) {
@@ -143,68 +100,25 @@ public class Poly extends Polygon {
 	}
 	
 	public void moveOnXYZ(Point3D increments) {
-		moveOnX(increments.getX());
-		moveOnY(increments.getY());
-		moveOnZ(increments.getZ());
-	}
-	
-	private void moveOnX(double increment) {
 		for (int i=0; i<x.length; i++) {
-			this.x[i] += increment;
-		}
-	}
-	
-	private void moveOnY(double increment) {
-		for (int i=0; i<y.length; i++) {
-			this.y[i] += increment;
-		}
-	}
-	
-	private void moveOnZ(double increment) {
-		for (int i=0; i<z.length; i++) {
-			this.z[i] += increment;
+			this.x[i] += increments.getX();
+			this.y[i] += increments.getY();
+			this.z[i] += increments.getZ();
 		}
 	}
 
-	
-	public boolean isSelected() {
-		return selected;
-	}
-	
-	public double[] getX() {
-		// return set of x coordinates for all points
-		return x;
-	}
-	
-	public double[] getY() {
-		// return set of y coordinates for all points
-		return y;
-	}
-	
-	public double[] getZ() {
-		// return set of z coordinates for all points
-		return z;
-	}
-	
 	public void setColor(Color c) {
 		this.c = c;
 	}
 	
-	public double getAvgDist() {
-	   /* return average of distances from all points on polygon
-		* to camera's view from. used to order the drawing of shapes
-		* from furthest object to nearest object */
-		return avgDist;
+	public double getDistance() {
+		return distance;
 	}
-	
-	public void setAvgDist(double avgDist) {
-			this.avgDist=avgDist;
-		}
 
-	public int compareTo(Poly o2) {
-	    if (this.getAvgDist()<o2.getAvgDist()) {
+	public int compareTo(Poly otherPoly) {
+	    if (this.getDistance()<otherPoly.getDistance()) {
 	          return 1;
-	    } else if (o2.getAvgDist()<this.getAvgDist()) {
+	    } else if (otherPoly.getDistance()<this.getDistance()) {
 	          return -1;
 	    }
 	    return 0;
@@ -213,17 +127,4 @@ public class Poly extends Polygon {
 	public int getShapeNumber() {
 		return shapeNumber;
 	}
-	
-	public void rotatePoly(int degrees) {}
-		
-		
-	public boolean isTestInstance() {
-		return isTestInstance;
-	}
-		
-	public void setTestInstance(boolean isTestInstance) {
-		this.isTestInstance = isTestInstance;
-	}
-		
-
 }

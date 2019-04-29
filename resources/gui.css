@@ -5,15 +5,14 @@
 .button {
     -fx-background-color: rgba(23, 32, 42, 1); /* dark charcoal */
     -fx-effect: dropshadow( three-pass-box , rgba(23, 32, 42, 1) , 10, 0.0 , 0 , 1 ); /* cobalt */
-    -fx-font-family: "Helvetica";
     -fx-text-fill: #d5dbdb; /* silver */
-    -fx-font-size: 12px;
+    -fx-font-size: 16px; 
     -fx-font-weight: normal;
 }
 
 .button:hover {
     -fx-font-weight: bold;
-    -fx-text-fill:  #f9e79f ; /* off-white */
+    -fx-text-fill:  #FFFF00 ; /* off-white */
 }
 
 .button:pressed {
@@ -21,48 +20,40 @@
     -fx-text-fill:  #f9e79f ; /* off-white */
 }
 
-
 .label {
-	-fx-text-fill: #424949; /* mid grey */
-	-fx-font-family: "Consolas";
-    -fx-font-size: 12px;
+	-fx-font-size: 16px;
+	-fx-text-fill: #FFFFFF;
 }
 
 .controls {
 	-fx-background-color: rgba(7, 10, 14, 1); /* dark cobalt */
-	
 }
 
-.console {
-	-fx-background-color: rgba(7, 10, 14, 1); /* dark cobalt */
+
+.slider .track {
+	-fx-background-color: #000000;
+	-fx-background-radius: 0;
 }
 
-.console .text {
-	-fx-font: 14px Courier;
-	-fx-fill: #d5dbdb; /* silver */
+.slider {
+	-fx-show-tick-marks: true;
+	-fx-snap-to-ticks: true;
+}
+
+.slider .thumb {
+	-fx-background-color: #d5dbdb!important;
+}
+
+.sectionlabel {
+	-fx-font-size: 16px;
 	-fx-font-weight: bold;
+	-fx-text-fill: #FFFFFF;
 }
 
-.controller {
-	-fx-background-color: rgba(7, 10, 14, 1); /* dark cobalt */
-}
-
-.controller .text {
-	-fx-font: 14px Courier;
-	-fx-fill: #d5dbdb; /* silver */
+.unitlabel {
+	-fx-font-size: 16px;
 	-fx-font-weight: bold;
+	-fx-text-fill: #00FFFF;
 }
 
-.textbox {
-	-fx-background-color: #424949; /* mid grey */
-	-fx-text-fill: #d5dbdb; /* silver */
-}
 
-.statsbox {
-	-fx-background-color: #424949; /* mid grey */
-	-fx-text-fill: #d5dbdb; /* silver */
-}
-
-.homescreen {
-	-fx-background-color: #000000; /* black */
-}

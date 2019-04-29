@@ -1,41 +1,40 @@
 package main.gui;
 
-import java.lang.reflect.Field;
-import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Stack;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
 public class Gradient {
 	
-	public static final double COLOR_SCALE = 50.0;
-	public static final int GRAD_SCALE = (int) COLOR_SCALE*7; // corresponds to number of color segments in gradients
-	public static LinkedList<Color> colorList = new LinkedList<Color>();
-	public static final int minRGB = 0; // 0 - full saturation, 255 - all white
-	public static final double alpha = .8; // 0 - clear coloring, 255 - solid coloring
-	private static int next = 0;
-	public static Map<String, Color> allColors = new HashMap<String, Color>();
-	private static int spectraIndex = 0;
-	private static String spectra;
-	private static String wavelength;
+	/**Defines and generates the gradients used to represent spectra for
+	 * obversation channels. Respresentation is demonstrative and not precise.
+	 * Gradients generate a specific number of colors.
+	 * 
+	 * Gradients roughly map to the ranges of stellar temperatures (kelvin), such that
+	 * the top of the gradient is arbitrarily hot and the bottom is arbitrarily
+	 * "cool". Arbitrary by whatever temperature range is produced in the simulation.
+	 * Except when too hot, all temperatures will have an indexed position in the
+	 * colorList. This is a poor implementation b/c Gradients are stored manually
+	 * rather than expressed algorithmically.
+	 */
 	
-	private static int dopplerShift; // from -50 to 50
-	public static Stack<Color> dopplerOverflow = new Stack<Color>();
-
-	
-	
-	public static Color getJavaColor(int index) {
-		String s = (String) allColors.keySet().toArray()[index];
-		return allColors.get(s);
-		
-		
-	}
+	public static final double COLOR_SCALE = 50.0; // pixel length of a sub-gradient within a spectra gradient
+	public static final int SUB_GRADIENT_COUNT = 7; // number of sub-gradients within a spectra gradient
+	public static final int GRAD_SCALE = (int) COLOR_SCALE * SUB_GRADIENT_COUNT; // total pixel size of the spectra gradient
+	public static LinkedList<Color> colorList = new LinkedList<Color>(); // maintains list of rgb values representing the gradient
+	public static final int minRGB = 0; // minimum allowable value for r, g, and b. 0 - full saturation, 255 - all white
+	public static final double alpha = 1; // alpha value for all gradients. 0 - clear coloring, 1 - solid coloring
+	private static int spectraIndex = 0; // case number for the current spectra
+	private static String spectra; // name of the current spectra
+	private static String wavelength; // wavelength info for the current spectra
+	private static int dopplerShift; // number of pixels to shift by for doppler effect [-COLOR_SCALE, ..., COLOR_SCALE]
+	public static Stack<Color> dopplerOverflow = new Stack<Color>(); // store colors not in use due to doppler shift
 	
 	public static void dopplerShift(int shift) {	
+		int scaleEffect = 40;
 		
-		int diff = Math.abs(shift - dopplerShift);
+		int diff = Math.abs(scaleEffect * shift - dopplerShift);
 		for (int i=0; i<diff; i++) {
 			if (shift < dopplerShift) { // if redshifting (chosen arbitrarily to be represented by negative integers)
 				Color minColor = Color.rgb(minRGB, minRGB, minRGB);
@@ -60,74 +59,16 @@ public class Gradient {
 				}
 			}
 		}
-		dopplerShift = shift;
 	}
-	
-	public static String getSpectra() {
-		// blueshift can happen at >0, <0, but decided to show no
-		// doppler shift labels within a slightly larger range around 0
-		if (dopplerShift > 20) {
-			return "Blueshift " + spectra;
-		} else if (dopplerShift < -20) {
-			return "Redshift " + spectra;
-		}
-		return spectra;
-	}
-	
-	public static String getWavelength() {
-		return wavelength;
-	}
-	
-	public static void generateGradient() {
-		loadJavaFXColors();
-		alternativeGradientC();
-	}
-	
-//	public static void changePalette(Spectra spectrum) {
-//		List<Color> palette = new ArrayList<Color>();
-//		List<Integer> weights = new ArrayList<Integer>();
-//		Color dark_grey = Color.rgb(minRGB, minRGB, minRGB, alpha);
-//		Color purple = Color.rgb(255, minRGB, 255, alpha);
-//		Color blue = Color.rgb(minRGB, minRGB, 255, alpha);
-//		Color green = Color.rgb(minRGB, 255, minRGB, alpha);
-//		Color yellow = Color.rgb(minRGB, 255, minRGB, alpha);
-//		Color orange = Color.rgb(minRGB, 255, minRGB, alpha);
-//		Color red = Color.rgb(minRGB, 255, minRGB, alpha);
-//		spectra = spectrum.title;
-//		wavelength = spectrum.about;
-//		switch (spectrum.id) {
-//			case "midinfrared":
-//				palette.add(dark_grey); // lower-outlier color
-//				palette.add(dark_grey, 13);
-//				palette.add(purple, 12);
-//				palette.add(blue, 13);
-//				palette.add(green, 12);
-//				palette.add(yellow, 13);
-//				palette.add(orange, 12);
-//				palette.add(red, 13); // upper-outlier color
-//				break;
-//			case "longuv":
-//				palette.add(dark_grey, 12); // lower-outlier color
-//				palette.add(dark_grey, 13);
-//				palette.add(grey, 12);
-//				palette.add(dark_purple, 13);
-//				palette.add(indigo, 12);
-//				palette.add(blue, 13);
-//				palette.add(cyan, 12);
-//				palette.add(green, 13); // upper-outlier color
-//			default:
-//		}
-//		createSpectrum(palette);
-//	}
 
 	public static void alternativeGradientB() {
 		spectra = "Long Wave UVA";
 		wavelength = "300-550 Nm wavelength";
 		Color c;
 		for (int i = 0; i<GRAD_SCALE; i++) {
-			double counter = i / COLOR_SCALE; // normalize gradient to total color scale
-			int whole = (int) counter; // get magnitude of gradient as an integer
-			double diff = counter - whole; // convert decimal to rgb color scale value
+			double counter = i / COLOR_SCALE; 
+			int whole = (int) counter; 
+			double diff = counter - whole; 
 			if (diff==0.0) {diff = 1;}
 			
 			int hex = (int) (diff * 255); // hex code on scale of 0-255
@@ -179,9 +120,9 @@ public class Gradient {
 		wavelength = "3-8 Mm wavelength";
 		Color c;
 		for (int i = 0; i<GRAD_SCALE; i++) {
-			double counter = i / COLOR_SCALE; // normalize gradient to total color scale
-			int whole = (int) counter; // get magnitude of gradient as an integer
-			double diff = counter - whole; // convert decimal to rgb color scale value
+			double counter = i / COLOR_SCALE; 
+			int whole = (int) counter; 
+			double diff = counter - whole; 
 			if (diff==0.0) {diff = 1;}
 			
 			int hex = (int) (diff * 255);
@@ -230,18 +171,14 @@ public class Gradient {
 		}
 	}
 
-	
-	/**
-	 * Balanced palette that eliminates eccentric colors
-	 */
 	public static void alternativeGradientC() {
 		spectra = "Long-Infrared";
 		wavelength = "8-14 Mm wavelength";
 		Color c;
 		for (int i = 0; i<GRAD_SCALE; i++) {
-			double counter = i / COLOR_SCALE; // normalize gradient to total color scale
-			int whole = (int) counter; // get magnitude of gradient as an integer
-			double diff = counter - whole; // convert decimal to rgb color scale value
+			double counter = i / COLOR_SCALE; 
+			int whole = (int) counter; 
+			double diff = counter - whole; 
 			if (diff==0.0) {diff = 1;}
 			
 			int hex = (int) (diff * 255);
@@ -292,9 +229,9 @@ public class Gradient {
 		wavelength = "0.5-3 Mm wavelength";
 		Color c;
 		for (int i = 0; i<GRAD_SCALE; i++) {
-			double counter = i / COLOR_SCALE; // normalize gradient to total color scale
-			int whole = (int) counter; // get magnitude of gradient as an integer
-			double diff = counter - whole; // convert decimal to rgb color scale value
+			double counter = i / COLOR_SCALE; 
+			int whole = (int) counter; 
+			double diff = counter - whole; 
 			if (diff==0.0) {diff = 1;}
 			
 			int hex = (int) (diff * 255);
@@ -342,9 +279,9 @@ public class Gradient {
 		wavelength = "Blue wavelengths only";
 		Color c;
 		for (int i = 0; i<GRAD_SCALE; i++) {
-			double counter = i / COLOR_SCALE; // normalize gradient to total color scale
-			int whole = (int) counter; // get magnitude of gradient as an integer
-			double diff = counter - whole; // convert decimal to rgb color scale value
+			double counter = i / COLOR_SCALE; 
+			int whole = (int) counter; 
+			double diff = counter - whole; 
 			if (diff==0.0) {diff = 1;}
 			
 			int hex = (int) (diff * 255);
@@ -394,9 +331,9 @@ public class Gradient {
 		wavelength = "Outliers only";
 		Color c;
 		for (int i = 0; i<GRAD_SCALE; i++) {
-			double counter = i / COLOR_SCALE; // normalize gradient to total color scale
-			int whole = (int) counter; // get magnitude of gradient as an integer
-			double diff = counter - whole; // convert decimal to rgb color scale value
+			double counter = i / COLOR_SCALE; 
+			int whole = (int) counter; 
+			double diff = counter - whole; 
 			if (diff==0.0) {diff = 1;}
 			
 			int hex = (int) (diff * 255);
@@ -440,55 +377,14 @@ public class Gradient {
 		}
 	}
 	
-	public static void alternativeGradientG() {
-		spectra = "Visible Spectrum";
-		wavelength = "400-740 Nm wavelength, segmented";
-		Color c;
-		for (int i = 0; i<GRAD_SCALE; i++) {
-			double counter = i / COLOR_SCALE; // normalize gradient to total color scale
-			int whole = (int) counter; // get magnitude of gradient as an integer
-			double diff = counter - whole; // convert decimal to rgb color scale value
-			if (diff==0.0) {diff = 1;}
-			
-			if (counter <= 1) {
-				// red
-				c = Color.rgb(255, minRGB, minRGB, alpha);
-			} else if (counter > 1 && counter <= 2) {
-				// orange
-				c = Color.rgb(255, 127, minRGB, alpha);	
-			} else if (counter > 2 && counter <= 3) {
-				// yellow
-				c = Color.rgb(255, 255, minRGB, alpha);	
-			} else if (counter > 3 && counter <= 4) {
-				// green
-				c = Color.rgb(minRGB, 255, minRGB, alpha);	
-			} else if (counter > 4 && counter <= 5) {
-				// cyan
-				c = Color.rgb(minRGB, 255, 255, alpha);	
-			} else if (counter > 5 && counter <= 6) {
-				// blue
-				c = Color.rgb(minRGB, minRGB, 255, alpha);	
-			} else if (counter > 6 && counter <= 7) {
-				// purple
-				c = Color.rgb(255, minRGB, 255, alpha);	
-			} else {
-				throw new IndexOutOfBoundsException();
-			}
-			while (dopplerOverflow.size() < 255) {
-				dopplerOverflow.add(Color.rgb(255, minRGB, 255, alpha));	
-			}
-			colorList.add(c);
-		}
-	}
-	
 	public static void alternativeGradientH() {
 		spectra = "Near Ultraviolet";
 		wavelength = "100-400 Nm wavelength";
 		Color c;
 		for (int i = 0; i<GRAD_SCALE; i++) {
-			double counter = i / COLOR_SCALE; // normalize gradient to total color scale
-			int whole = (int) counter; // get magnitude of gradient as an integer
-			double diff = counter - whole; // convert decimal to rgb color scale value
+			double counter = i / COLOR_SCALE; 
+			int whole = (int) counter; 
+			double diff = counter - whole; 
 			if (diff==0.0) {diff = 1;}
 			
 			int hex = (int) (diff * 255);
@@ -529,97 +425,15 @@ public class Gradient {
 			colorList.add(c);
 		}
 	}
-
-	public static void alternativeGradientI() {
-		spectra = "Deuteranomaly";
-		wavelength = "Red-green colorblind";
-		Color c;
-		for (int i = 0; i<GRAD_SCALE; i++) {
-			double counter = i / COLOR_SCALE; // normalize gradient to total color scale
-			int whole = (int) counter; // get magnitude of gradient as an integer
-			double diff = counter - whole; // convert decimal to rgb color scale value
-			if (diff==0.0) {diff = 1;}
-			
-			if (counter <= 1) {
-				// burnt orange/brown as red
-				c = Color.rgb(127, 63, minRGB, alpha);
-			} else if (counter > 1 && counter <= 2) {
-				// light burnt orange/brown as orange
-				c = Color.rgb(127, 127, minRGB, alpha);	
-			} else if (counter > 2 && counter <= 3) {
-				// yellow
-				c = Color.rgb(255, 255, minRGB, alpha);	
-			} else if (counter > 3 && counter <= 4) {
-				// neon-yellow as green
-				c = Color.rgb(190, 255, minRGB, alpha);	
-			} else if (counter > 4 && counter <= 5) {
-				// cyan, but lighter
-				c = Color.rgb(127, 255, 255, alpha);	
-			} else if (counter > 5 && counter <= 6) {
-				// blue, but darker
-				c = Color.rgb(minRGB, minRGB, 190, alpha);	
-			} else if (counter > 6 && counter <= 7) {
-				// greyish-purple for purple
-				c = Color.rgb(190, 127, 190, alpha);	
-			} else {
-				throw new IndexOutOfBoundsException();
-			}
-			while (dopplerOverflow.size() < 255) {
-				dopplerOverflow.add(Color.rgb(127, 63, 255, alpha));	
-			}
-			colorList.add(c);
-		}
-	}
-	
-	public static void alternativeGradientJ() {
-		spectra = "Tritanopia";
-		wavelength = "Blue-yellow colorblind";
-		Color c;
-		for (int i = 0; i<GRAD_SCALE; i++) {
-			double counter = i / COLOR_SCALE; // normalize gradient to total color scale
-			int whole = (int) counter; // get magnitude of gradient as an integer
-			double diff = counter - whole; // convert decimal to rgb color scale value
-			if (diff==0.0) {diff = 1;}
-			
-			if (counter <= 1) {
-				// red
-				c = Color.rgb(255, minRGB, minRGB, alpha);
-			} else if (counter > 1 && counter <= 2) {
-				// light red as orange
-				c = Color.rgb(255, 127, 127, alpha);	
-			} else if (counter > 2 && counter <= 3) {
-				// white as yellow
-				c = Color.rgb(255, 255, 255, alpha);	
-			} else if (counter > 3 && counter <= 4) {
-				// cyan as green
-				c = Color.rgb(minRGB, 255, 210, alpha);	
-			} else if (counter > 4 && counter <= 5) {
-				// cyan, but lighter
-				c = Color.rgb(127, 255, 255, alpha);	
-			} else if (counter > 5 && counter <= 6) {
-				// dark, greyed teal as blue
-				c = Color.rgb(50, 85, 85, alpha);	
-			} else if (counter > 6 && counter <= 7) {
-				// slightly greyed pink as purple
-				c = Color.rgb(220, 127, 127, alpha);
-			} else {
-				throw new IndexOutOfBoundsException();
-			}
-			while (dopplerOverflow.size() < 255) {
-				dopplerOverflow.add(Color.rgb(220, 127, 127, alpha));	
-			}
-			colorList.add(c);
-		}
-	}
 	
 	public static void alternativeGradientK() {
 		spectra = "Hydrogen";
 		wavelength = "Hydrogen emission spectrum";
 		Color c;
 		for (int i = 0; i<GRAD_SCALE; i++) {
-			double counter = i / COLOR_SCALE; // normalize gradient to total color scale
-			int whole = (int) counter; // get magnitude of gradient as an integer
-			double diff = counter - whole; // convert decimal to rgb color scale value
+			double counter = i / COLOR_SCALE; 
+			int whole = (int) counter; 
+			double diff = counter - whole; 
 			if (diff==0.0) {diff = 1;}
 			
 			int hex = (int) (diff * 255);
@@ -671,9 +485,9 @@ public class Gradient {
 		wavelength = "Nitrogen emission spectrum";
 		Color c;
 		for (int i = 0; i<GRAD_SCALE; i++) {
-			double counter = i / COLOR_SCALE; // normalize gradient to total color scale
-			int whole = (int) counter; // get magnitude of gradient as an integer
-			double diff = counter - whole; // convert decimal to rgb color scale value
+			double counter = i / COLOR_SCALE; 
+			int whole = (int) counter; 
+			double diff = counter - whole; 
 			if (diff==0.0) {diff = 1;}
 			
 			int hex = (int) (diff * 255);
@@ -719,9 +533,9 @@ public class Gradient {
 		wavelength = "Hertzsprung-Russel OBAFGKM";
 		Color c;
 		for (int i = 0; i<GRAD_SCALE; i++) {
-			double counter = i / COLOR_SCALE; // normalize gradient to total color scale
-			int whole = (int) counter; // get magnitude of gradient as an integer
-			double diff = counter - whole; // convert decimal to rgb color scale value
+			double counter = i / COLOR_SCALE; 
+			int whole = (int) counter; 
+			double diff = counter - whole; 
 			if (diff==0.0) {diff = 1;}
 			
 			int hex = (int) (diff * 255);
@@ -767,78 +581,10 @@ public class Gradient {
 			colorList.add(c);
 		}
 	}
-	
-	public static void alternativeGradientN() {
-		spectra = "Topographical";
-		wavelength = "Below to above sea level";
-		Color c;
-		for (int i = 0; i<GRAD_SCALE; i++) {
-			double counter = i / COLOR_SCALE; // normalize gradient to total color scale
-			int whole = (int) counter; // get magnitude of gradient as an integer
-			double diff = counter - whole; // convert decimal to rgb color scale value
-			if (diff==0.0) {diff = 1;}
-			
-			int hex = (int) (diff * 255);
-			if (counter <= 1) {
-				// black to blue
-				if (hex<minRGB) {hex=minRGB;}
-				c = Color.rgb(minRGB, minRGB, hex, alpha);	
-			} else if (counter > 1 && counter <= 2) {
-				// blue
-				c = Color.rgb(minRGB, minRGB, 255, alpha);
-			} else if (counter > 2 && counter <= 3) {
-				// blue to cyan
-				if (hex<minRGB) {hex=minRGB;}
-				c = Color.rgb(minRGB, hex, 255, alpha);	
-			} else if (counter > 3 && counter <= 4) {
-				// mid green to faded yellow, accelerated
-				if (hex < 127) {
-					c = Color.rgb(hex, 127, minRGB, alpha);
-				} else {
-					c = Color.rgb(127, 127, minRGB, alpha);	
-				}
-			} else if (counter > 4 && counter <= 5) {
-				// aded yellow
-				c = Color.rgb(127, 127, minRGB, alpha);	
-			} else if (counter > 5 && counter <= 6) {
-				// faded yellow to mid orange
-				int b = 255 - (int) (hex/2);
-				if (b<minRGB) {b=minRGB;}
-				c = Color.rgb(b, 127, minRGB, alpha);	
-			} else if (counter > 6 && counter <= 7) {
-				// mid orange to deep red, delayed
-				if (hex < 127) {
-					c = Color.rgb(127, 127, minRGB, alpha);	
-				} else {
-					int b = (int) 255 - (hex/2);
-					if (b<minRGB) {b=minRGB;}		
-					int a = (int) 127 - (hex/2);
-					if (a<minRGB) {a=minRGB;}	
-					c = Color.rgb(b, a, minRGB, alpha);	
-				}
-			} else {
-				throw new IndexOutOfBoundsException();
-			}
-			while (dopplerOverflow.size() < 255) {
-				// red
-				dopplerOverflow.add(Color.rgb(255, minRGB, minRGB, alpha));	
-			}
-			colorList.add(c);
-		}
-	}
-	
-	public static void alternativeGradientO() {
-		spectra = "All Black";
-		wavelength = "N/A";
-		for (int i = 0; i<GRAD_SCALE; i++) {
-			colorList.add(Color.rgb(minRGB, minRGB, minRGB, alpha));
-		}
-	}
-	
 
 	
 	public static void drawColorScale(GraphicsContext g) {
-		// fill in gradient box
+		// draw the narrow, vertical color bar for the user interface
 		double vScale = 3.5;
 		int i = 0;
 		for (; i<colorList.size()*vScale; i++) {
@@ -847,39 +593,10 @@ public class Gradient {
 		}
 		g.setFill(Color.BLACK);
 		g.fillRect(0, colorList.size()*vScale, 40, 500);
-		
-		// draw outline for gradient box
-//		g.setStroke(Color.BLACK);
-//		g.strokeRect(0, y-GRAD_SCALE, 40, GRAD_SCALE);
-
-		// draw indicator for actively selected object on scale 
-//		if (Sim.getActiveObjectIndex() >= 0) {
-//			int activeLine = Sim.getActiveObject().getKelvin();
-//			if (activeLine > GRAD_SCALE) {
-//				activeLine = GRAD_SCALE;
-//			}
-//			g.drawLine(10, 600 - activeLine, 30, 600 - activeLine);
-//		}
-	}
-	
-	public static Color greyScale(Color rgbColor, boolean invertBrightness) {
-		
-		// the rgb values in JavaFX colors are from 0.0 to 1.0
-		double r = rgbColor.getRed();
-		double g = rgbColor.getGreen();
-		double b = rgbColor.getBlue();
-
-		double rgbAvg = (r+g+b) / 3;
-		
-		// invert the brightness on the black -> white scale
-		if (invertBrightness) {
-			rgbAvg = 1 - rgbAvg;
-		}
-		
-		return Color.color(rgbAvg, rgbAvg, rgbAvg, .8);
 	}
 	
 	public static Color getColor(int index) {
+		
 		if (index >= GRAD_SCALE) {
 			index = GRAD_SCALE - 1;
 		} else if (index < 0) {
@@ -888,40 +605,22 @@ public class Gradient {
 		return colorList.get(index);
 	}
 	
-	public static int getScale() {
-		return GRAD_SCALE;
+	
+	public static String getSpectra() {
+		return spectra;
 	}
 	
-	public static Color next() {
-		Color temp = getColor(next);
-		next++;
-		if (next==colorList.size()) {
-			next = 0;
-		}
-		return temp;
+	public static String getWavelength() {
+		return wavelength;
 	}
 	
-	public static void resetSchema() {
-		colorList.clear();
-		alternativeGradientC();
-		spectraIndex = 0;
+	public static void resetSpectra() {
+		selectSchema(0);
+	}
+	
+	public static void selectSchema(int target) {
+		spectraIndex = target;		
 		dopplerShift = 0;
-	}
-	
-	public static void nextSchema(int i) {
-		final int schemaMax = 14;
-		spectraIndex += i;
-	
-		// if new index is over the maximum by more than one, go to maximum
-		// if new index is below zero by exactly one, go to maximum
-		// if new index is over the maximum by exactly one, go to beginning
-		// if new index is below zero by more than one, go to beginning
-		if (spectraIndex > schemaMax+1 || spectraIndex+1==0) {
-			spectraIndex = schemaMax;
-		} else if (spectraIndex < 0 || spectraIndex==schemaMax+1) {
-			spectraIndex = 0;
-		}
-		
 		colorList.clear();
 		dopplerOverflow.clear();
 		switch (spectraIndex) {
@@ -941,55 +640,21 @@ public class Gradient {
 				alternativeGradientF();
 				break;
 			case 6:
-				alternativeGradientG();
-				break;
-			case 7:
 				alternativeGradientH();
 				break;
-			case 8:
-				alternativeGradientI();
-				break;
-			case 9:
-				alternativeGradientJ();
-				break;
-			case 10:
+			case 7:
 				alternativeGradientK();
 				break;
-			case 11:
+			case 8:
 				alternativeGradientL();
 				break;
-			case 12:
+			case 9:
 				alternativeGradientM();
-				break;
-			case 13:
-				alternativeGradientN();
-				break;
-			case 14:
-				alternativeGradientO();
 				break;
 			default:
 				alternativeGradientC();
-		}
-	}
-	
-	// from https://stackoverflow.com/questions/17464906/how-to-list-all-colors-in-javafx
-	private static void loadJavaFXColors() {
-		try {
-		    Class colorClass = Class.forName("javafx.scene.paint.Color");
-		    if (colorClass != null) {
-		        Field[] fields = colorClass.getFields();
-		        for (int i = 0; i < fields.length; i++) {
-		            Field f = fields[i];                
-		            Object obj = f.get(null);
-		            if(obj instanceof Color){
-		            	allColors.put(f.getName(), (Color) obj);
-		            }
-		        }
-		    }
-		} catch (ClassNotFoundException | IllegalAccessException e1) {
-			System.out.println("failed to import javafx default colors");
-		}
+				spectraIndex = 0;
+		}	}
 
 
-	}
 }
