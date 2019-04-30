@@ -4,6 +4,10 @@ import java.util.LinkedList;
 import java.util.Stack;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
+import javafx.scene.shape.Rectangle;
 
 public class Gradient {
 	
@@ -17,6 +21,11 @@ public class Gradient {
 	 * Except when too hot, all temperatures will have an indexed position in the
 	 * colorList. This is a poor implementation b/c Gradients are stored manually
 	 * rather than expressed algorithmically.
+	 * 
+	 * JavaFX LinearGradient could have been used, but picking out colors along the
+	 * gradient requires reconstructing the gradient section by interpolation, then
+	 * normalizing the needed index of the color to the range of the reconstructed
+	 * gradient. This implementation provides quick color lookup.
 	 */
 	
 	public static final double COLOR_SCALE = 50.0; // pixel length of a sub-gradient within a spectra gradient
@@ -583,16 +592,21 @@ public class Gradient {
 	}
 
 	
-	public static void drawColorScale(GraphicsContext g) {
-		// draw the narrow, vertical color bar for the user interface
-		double vScale = 3.5;
-		int i = 0;
-		for (; i<colorList.size()*vScale; i++) {
-			g.setStroke(colorList.get((int) (i/vScale)));
-			g.strokeLine(0, colorList.size()*vScale - i, 40, colorList.size()*vScale - i);
+	public static void drawColorScale(GraphicsContext g, double numColors) {
+		// draw the color bar for the user interface
+		double interval = colorList.size() / numColors;
+		for (int i=0; i<numColors; i++) {
+			g.setStroke(colorList.get((int) (i*interval)));
+			g.strokeLine(i, 0, i, 5);
 		}
-		g.setFill(Color.BLACK);
-		g.fillRect(0, colorList.size()*vScale, 40, 500);
+		
+		// example for using linear gradient instead of manual gradients
+//		LinearGradient gradient = new LinearGradient(0, 0, 1, 1, true, CycleMethod.NO_CYCLE, 
+//													 new Stop(0.0, Color.RED), 
+//					                                 new Stop(0.5, Color.GREEN),
+//					                                 new Stop(1.0, Color.BLUE));
+//		g.setFill(gradient);
+//		g.fillRect(0, 0, numColors, 5);
 	}
 	
 	public static Color getColor(int index) {

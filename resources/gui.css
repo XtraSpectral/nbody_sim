@@ -27,6 +27,7 @@
 
 .controls {
 	-fx-background-color: rgba(7, 10, 14, 1); /* dark cobalt */
+	-fx-padding: 5px;
 }
 
 

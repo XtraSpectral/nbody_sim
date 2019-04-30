@@ -54,7 +54,7 @@ public class Main extends Application {
 		stage.setMinWidth(440);
 		stage.setMinHeight(600);
 		stage.setMaxWidth(3440);
-		stage.setMaxHeight(1440);
+		stage.setMaxHeight(1280);
 		stage.setTitle("");
 		stage.setScene(scene);
 		stage.setOnCloseRequest(e -> {endSession();});

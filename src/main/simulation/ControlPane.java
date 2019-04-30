@@ -29,9 +29,10 @@ public class ControlPane extends HBox {
 	 * and application. 
 	 */
 	
-	VBox controls;
+	private VBox controls;
+	private Canvas gradientBar;
 	
-	private int center = 105;
+	private int center = 115;
 	private Canvas compass = new Canvas(center*2, center*2);
 	private int fontSize = 14; // space between 
 	private Font f = new Font("Consolas", fontSize);
@@ -49,12 +50,11 @@ public class ControlPane extends HBox {
 	private Label vFoci;
 
 	public ControlPane(Scene scene, PhysicsApp render) {
+		this.setHeight(scene.getHeight());
 		
+		// create control panel and add it to layout
 		controls = makeControlPanel();
-		Canvas colorBar = makeColorBar(scene);
-
-		// create color bar and add to this with controls
-		getChildren().addAll(controls, colorBar);
+		getChildren().addAll(controls);
 		
 		// add keyboard controls
 		addKeyboardControls(scene, render);
@@ -108,11 +108,11 @@ public class ControlPane extends HBox {
 	
 	public VBox makeControlPanel() {
 		VBox controls = new VBox();
-		controls.setPrefWidth(220);
+		controls.setPrefWidth(250);
 		controls.setSpacing(5);
 		controls.maxHeight(Double.MAX_VALUE);
 		controls.getStyleClass().add("controls");
-		VBox.setVgrow(controls, Priority.ALWAYS);
+		controls.setAlignment(Pos.TOP_CENTER);
 		return controls;
 	}
 	
@@ -157,27 +157,24 @@ public class ControlPane extends HBox {
 	/* ========================== */
 	
 	private void addSceneControls(Scene scene, PhysicsApp render) {
-		scene.widthProperty().addListener(new ChangeListener<Number>() {
-		    @Override public void changed(ObservableValue<? extends Number> observableValue, Number oldSceneWidth, Number newSceneWidth) {
-		        // System.out.println("Width: " + newSceneWidth);
-		    }
-		});
-		scene.heightProperty().addListener(new ChangeListener<Number>() {
-		    @Override public void changed(ObservableValue<? extends Number> observableValue, Number oldSceneHeight, Number newSceneHeight) {
-//		        System.out.println("Height: " + newSceneHeight);
-		        newColorBar(scene);
-		    }
-		});	
-		
-		
 		
 		addControls(compass);
 
 		
+		gradientBar = new Canvas();
+		gradientBar.setHeight(5);
+		gradientBar.setWidth(200);
+		gradientBar.maxWidth(Double.MAX_VALUE);
+		gradientBar.maxHeight(Double.MAX_VALUE);
+		makeColorBar();
+		addControls(gradientBar);
+		
+		
+		
 		
 		Slider dopplerSlider = makeSlider();
 		Label dopplerLabel = makeSectionLabel("Doppler Shift");
-		Label dopplerUnits = makeUnitLabel("+0%");
+		Label dopplerUnits = makeUnitLabel("+0");
 		
 		Label spectraLabel = makeSectionLabel("Spectra");
 		Label gradientSchema = makeUnitLabel(Gradient.getSpectra());
@@ -187,12 +184,19 @@ public class ControlPane extends HBox {
 			@Override
 			public void changed(ObservableValue<? extends Number> ov, Number oldVal, Number newVal) {
 				Gradient.dopplerShift(newVal.intValue());
-				updateColorLabels(scene, gradientSchema, gradientWavelength);
+				updateColorLabels(gradientSchema, gradientWavelength);
 				int adjust = newVal.intValue() * 5;
-				dopplerUnits.setText(String.format("%s%d%%", adjust < 0 ? "-" : "+", Math.abs(adjust)));
+				dopplerUnits.setText(String.format("%s%d", adjust < 0 ? "-" : "+", Math.abs(adjust)));
 				
 			}
 		});
+		
+		
+		
+
+		
+		
+		
 		
 		
 		addMultiControl(spectraLabel, gradientSchema);
@@ -202,7 +206,7 @@ public class ControlPane extends HBox {
 			@Override
 			public void changed(ObservableValue<? extends Number> ov, Number oldVal, Number newVal) {
 				Gradient.selectSchema(newVal.intValue() + 6);
-				updateColorLabels(scene, gradientSchema, gradientWavelength);
+				updateColorLabels(gradientSchema, gradientWavelength);
 			}
 		});
 		spectraSlider.setValue(-6);
@@ -264,7 +268,7 @@ public class ControlPane extends HBox {
 		
 		
 		Label spaceLabel = makeSectionLabel("Space");
-		Label spaceUnits = makeUnitLabel("0");
+		Label spaceUnits = makeUnitLabel("-");
 		
 		addMultiControl(spaceLabel, spaceUnits);
 		
@@ -418,15 +422,10 @@ public class ControlPane extends HBox {
 	/* ===== CONTROL GUI MECHANISMS ===== */
 	/* ================================== */
 	
-	private void updateColorLabels(Scene scene, Label name, Label desc) {
-    	newColorBar(scene);
+	private void updateColorLabels(Label name, Label desc) {
+    	makeColorBar();
     	name.setText(Gradient.getSpectra());
     	desc.setText(Gradient.getWavelength());
-	}
-
-	public void newColorBar(Scene scene) {
-		// replace the color bar at index 1 of this hbox
-		getChildren().set(1, makeColorBar(scene));
 	}
 
 	private void addMultiControl(Node... elements) {
@@ -465,23 +464,15 @@ public class ControlPane extends HBox {
 		}
 	}
 
-	private Canvas makeColorBar(Scene scene) {
-		Canvas canvas = new Canvas();
-		canvas.setWidth(5);
-		canvas.heightProperty().bind(scene.heightProperty());
+	private void makeColorBar() {
 
-		GraphicsContext gr = canvas.getGraphicsContext2D();
+		GraphicsContext gr = gradientBar.getGraphicsContext2D();
 		gr.setFill(Color.BLACK);
-		gr.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
+		gr.fillRect(0, 0, gradientBar.getWidth(), gradientBar.getHeight());
 		
-		Gradient.drawColorScale(gr);
+		double numColors = gradientBar.getWidth();
 		
-		canvas.maxWidth(Double.MAX_VALUE);
-		canvas.maxHeight(Double.MAX_VALUE);
-		HBox.setHgrow(canvas, Priority.ALWAYS);
-		VBox.setVgrow(canvas, Priority.ALWAYS);
-		
-		return canvas;
+		Gradient.drawColorScale(gr, numColors);
 	}
 	
 	public void refreshInfo(Vector camera, Galaxy galaxy ) {
