@@ -1,4 +1,4 @@
-#N-Body Simulation/Data Viz for Astral Spectra
+# N-Body Simulation/Data Viz for Astral Spectra
 
 Written for my SWE632 class, with focus on UI development. 
 
