@@ -13,7 +13,7 @@ Hydrogen emission spectra,
 Nitrogen emission spectra,
 Stellar classification
 
-
+Data/references: Atomic spectra database for emission spectra
 
 
 Credit to JavaTutorials101 for their 3D from scratch tutorial, which I used to inform the graphics rendering engine.
