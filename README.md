@@ -8,7 +8,8 @@ and other effects.
 
 ![Alt text](screenshots/preview.png)
 
-####Features
+
+#### Features
  - Gravity slider
  - Radiation output slider
  - Doppler shift slider (unimplemented)
@@ -20,7 +21,7 @@ and other effects.
  - Completely arbitrary graph-edge generating rules for cool visual effect
 
 
-####Color schemes
+#### Color schemes
 Some artistic liberty has been taken with representing the color schemes. Most schemes
 map colors from hot to cold, but the emission spectra schemes are reversed. Stellar
 classification is a simple overlay.
@@ -36,12 +37,12 @@ classification is a simple overlay.
  - Stellar classification
  
  
-####About this project
+#### About this project
 Not under further development because this was just a way to try out Java, 
 GUI/vector graphics dev, and physics programming. Look for a Python version in the 
 future to improve on everything here.
 
 
-####Credit
+#### Credit
 JavaTutorials101 for their 3D from scratch tutorial, which I used to inform the graphics rendering engine.
 
