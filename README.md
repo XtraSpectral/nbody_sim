@@ -1,4 +1,4 @@
-# N-Body Simulation / Data Viz for Astral Spectra
+# N-Body Simulation / Viz for Astral Spectra
 
 Color scheme vizualization built as an n-body simulation, 
 populating a bunch of physics-enabled (incl. radiation) nodes in navigable, interactive 3D space. 
